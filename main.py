@@ -1,42 +1,57 @@
 import csv
 import os
 
-# Updated to look inside the 'data' folder with the correct filenames
-filenames = [
+# 1. Define input and output file paths
+input_filenames = [
     'data/daily_sales_data_0.csv', 
     'data/daily_sales_data_1.csv', 
     'data/daily_sales_data_2.csv'
 ]
 
-total_sales = 0
-files_processed = 0
+output_filename = 'formatted_data.csv'
 
-for filename in filenames:
-    try:
-        with open(filename, 'r') as csv_file:
-            csv_reader = csv.reader(csv_file)
-            header = next(csv_reader) # Skip header
-            
-            for row in csv_reader:
-                if row[0] == 'pink morsel':
+# 2. Open the output file in write mode
+# 'newline=""' is important to prevent blank lines between rows in Windows
+with open(output_filename, 'w', newline='') as output_file:
+    csv_writer = csv.writer(output_file)
+    
+    # 3. Write the required header row
+    csv_writer.writerow(['Sales', 'Date', 'Region'])
+
+    print("Processing files...")
+
+    # 4. Loop through each input file
+    for filename in input_filenames:
+        try:
+            with open(filename, 'r') as csv_file:
+                csv_reader = csv.reader(csv_file)
+                
+                # Skip the input file's header (product, price, quantity, date, region)
+                header = next(csv_reader)
+                
+                for row in csv_reader:
+                    product_name = row[0]
                     
-                    price = float(row[1].strip('$'))
-                    quantity = int(row[2])
-                    total_sales += price * quantity
+                    # 5. Filter: We only want 'pink morsel'
+                    if product_name == 'pink morsel':
+                        
+                        # Extract data (row[1] is price, row[2] is quantity, row[3] is date, row[4] is region)
+                        # We must strip the '$' from price to multiply it
+                        price = float(row[1].strip('$'))
+                        quantity = int(row[2])
+                        
+                        # Calculate Sales
+                        sales = price * quantity
+                        
+                        date = row[3]
+                        region = row[4]
+                        
+                        # 6. Write the transformed row to the output file
+                        csv_writer.writerow([sales, date, region])
+                        
+            print(f"-> Successfully processed {filename}")
             
-            files_processed += 1
-            print(f"Successfully processed: {filename}")
-            
-    except FileNotFoundError:
-        # This will help us confirm exactly what is failing
-        print(f"Error: Could not find '{filename}' in directory '{os.getcwd()}'")
+        except FileNotFoundError:
+            print(f"Error: Could not find {filename}. Please ensure the 'data' folder exists and contains the files.")
 
-if files_processed == 0:
-    print("\n--- TROUBLESHOOTING ---")
-    print("No files were found. Here are the files actually located in your 'data' folder:")
-    if os.path.exists('data'):
-        print(os.listdir('data'))
-    else:
-        print("The 'data' folder does not exist in this directory.")
-else:
-    print(f"Total Sales for Pink Morsel: ${total_sales:,.2f}")
+print(f"Done! Check '{output_filename}' for the results.")
